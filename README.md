@@ -2,6 +2,8 @@
 
 Sistema de gerenciamento de pedidos desenvolvido em Spring Boot com PostgreSQL.
 
+![image](https://github.com/user-attachments/assets/d55b7fec-9e60-4266-a60a-d16024914362)
+
 ## 📋 Pré-requisitos
 
 - [Docker](https://www.docker.com/get-started) (versão 20.10 ou superior)
