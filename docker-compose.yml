@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   postgres:
@@ -6,8 +6,8 @@ services:
     container_name: order-management-db
     environment:
       POSTGRES_DB: order_management
-      POSTGRES_USER: order_user
-      POSTGRES_PASSWORD: order_password
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
     ports:
       - "5432:5432"
     volumes:
@@ -15,7 +15,7 @@ services:
     networks:
       - order-management-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U order_user -d order_management"]
+      test: ["CMD-SHELL", "pg_isready -U admin -d order_management"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -27,8 +27,13 @@ services:
     container_name: order-management-app
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/order_management
-      SPRING_DATASOURCE_USERNAME: order_user
-      SPRING_DATASOURCE_PASSWORD: order_password
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: true
+      LOGGING_LEVEL_COM_B2B_ORDERMANAGEMENT: DEBUG
+      LOGGING_LEVEL_ROOT: INFO
+      SERVER_PORT: 8080
     ports:
       - "8080:8080"
     depends_on:
@@ -37,6 +42,25 @@ services:
     networks:
       - order-management-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: order-management-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    ports:
+      - "8081:80"
+    networks:
+      - order-management-network
+    depends_on:
+      - postgres
 
 volumes:
   postgres_data:
