@@ -299,5 +299,19 @@ class OrderControllerTest {
                     .andExpect(jsonPath("$.id").value(orderId))
                     .andExpect(jsonPath("$.status").value("APPROVED"));
         }
+
+        @Test
+        @DisplayName("Should return 404 when order not found")
+        void approveOrder_WithInvalidId_ShouldReturnNotFound() throws Exception {
+            String orderId = "INVALID_ORDER";
+
+            when(orderService.approveOrder(orderId))
+                    .thenThrow(new ResourceNotFoundException("Order not found: " + orderId));
+
+
+            mockMvc.perform(put("/api/v1/orders/{orderId}/approve", orderId))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
+        }
     }
 }
