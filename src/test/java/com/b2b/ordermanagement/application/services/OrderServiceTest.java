@@ -25,7 +25,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -76,20 +75,17 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should create order successfully when all conditions are met")
         void shouldCreateOrderSuccessfully() {
-            // Given
             CreateOrderDTO orderDTO = mock(CreateOrderDTO.class);
             when(orderDTO.partnerId()).thenReturn("PARTNER001");
-            when(orderDTO.items()).thenReturn(List.of()); // Empty list to avoid casting issues
+            when(orderDTO.items()).thenReturn(List.of());
 
             when(partnerService.getPartnerEntityById("PARTNER001")).thenReturn(mockPartner);
             when(mockPartner.hasAvailableCredit(any(BigDecimal.class))).thenReturn(true);
             when(orderRepository.save(any(Order.class))).thenReturn(mockOrder);
             when(orderMapper.toResponseDTO(any(Order.class))).thenReturn(mockOrderResponseDTO);
 
-            // When
             OrderResponseDTO result = orderService.createOrder(orderDTO);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.id()).isEqualTo(mockOrder.getId());
             verify(partnerService).getPartnerEntityById("PARTNER001");
@@ -100,16 +96,14 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should throw BusinessException when partner has insufficient credit")
         void shouldThrowBusinessExceptionWhenInsufficientCredit() {
-            // Given
             CreateOrderDTO orderDTO = mock(CreateOrderDTO.class);
             when(orderDTO.partnerId()).thenReturn("PARTNER001");
-            when(orderDTO.items()).thenReturn(List.of()); // Empty list to avoid casting issues
+            when(orderDTO.items()).thenReturn(List.of());
 
             when(partnerService.getPartnerEntityById("PARTNER001")).thenReturn(mockPartner);
             when(mockPartner.hasAvailableCredit(any(BigDecimal.class))).thenReturn(false);
             when(mockPartner.getId()).thenReturn("PARTNER001");
 
-            // When & Then
             assertThatThrownBy(() -> orderService.createOrder(orderDTO))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Insufficient credit available for partner: PARTNER001");
@@ -138,7 +132,6 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should throw BusinessException when order repository throws exception")
         void shouldThrowBusinessExceptionWhenRepositoryFails() {
-            // Given
             CreateOrderDTO orderDTO = mock(CreateOrderDTO.class);
             when(orderDTO.partnerId()).thenReturn("PARTNER001");
             when(orderDTO.items()).thenReturn(List.of());
@@ -156,7 +149,6 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should handle empty items list gracefully")
         void shouldHandleEmptyItemsList() {
-            // Given
             CreateOrderDTO emptyItemsDTO = mock(CreateOrderDTO.class);
             when(emptyItemsDTO.partnerId()).thenReturn("PARTNER001");
             when(emptyItemsDTO.items()).thenReturn(List.of());
@@ -166,10 +158,8 @@ public class OrderServiceTest {
             when(orderRepository.save(any(Order.class))).thenReturn(mockOrder);
             when(orderMapper.toResponseDTO(any(Order.class))).thenReturn(mockOrderResponseDTO);
 
-            // When
             OrderResponseDTO result = orderService.createOrder(emptyItemsDTO);
 
-            // Then
             assertThat(result).isNotNull();
             verify(orderRepository).save(any(Order.class));
         }
@@ -182,15 +172,12 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should return order when found")
         void shouldReturnOrderWhenFound() {
-            // Given
             String orderId = "order-123";
             when(orderRepository.findById(orderId)).thenReturn(Optional.of(mockOrder));
             when(orderMapper.toResponseDTO(mockOrder)).thenReturn(mockOrderResponseDTO);
 
-            // When
             OrderResponseDTO result = orderService.getOrderById(orderId);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.id()).isEqualTo(mockOrder.getId());
             verify(orderRepository).findById(orderId);
@@ -199,11 +186,9 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should throw ResourceNotFoundException when order not found")
         void shouldThrowResourceNotFoundExceptionWhenOrderNotFound() {
-            // Given
             String orderId = "non-existent-order";
             when(orderRepository.findById(orderId)).thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> orderService.getOrderById(orderId))
                     .isInstanceOf(ResourceNotFoundException.class)
                     .hasMessageContaining("Order not found: " + orderId);
@@ -228,7 +213,6 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should return filtered orders with all filters applied")
         void shouldReturnFilteredOrdersWithAllFilters() {
-            // Given
             when(mockFilters.hasPartnerId()).thenReturn(true);
             when(mockFilters.hasStatus()).thenReturn(true);
             when(mockFilters.hasDateRange()).thenReturn(true);
@@ -244,10 +228,8 @@ public class OrderServiceTest {
 
             when(orderMapper.toResponseDTO(any(Order.class))).thenReturn(mockOrderResponseDTO);
 
-            // When
             Page<OrderResponseDTO> result = orderService.getFilteredOrders(mockFilters, mockPageable);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).hasSize(1);
             verify(orderRepository).findByPartnerIdAndStatusAndCreatedAtBetween(
@@ -259,17 +241,14 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should return all orders when no filters applied")
         void shouldReturnAllOrdersWhenNoFiltersApplied() {
-            // Given
             when(mockFilters.hasPartnerId()).thenReturn(false);
             when(mockFilters.hasStatus()).thenReturn(false);
             when(mockFilters.hasDateRange()).thenReturn(false);
             when(orderRepository.findAll(any(Pageable.class))).thenReturn(mockOrderPage);
             when(orderMapper.toResponseDTO(any(Order.class))).thenReturn(mockOrderResponseDTO);
 
-            // When
             Page<OrderResponseDTO> result = orderService.getFilteredOrders(mockFilters, mockPageable);
 
-            // Then
             assertThat(result).isNotNull();
             verify(orderRepository).findAll(any(Pageable.class));
         }
@@ -277,17 +256,14 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should handle empty results gracefully")
         void shouldHandleEmptyResultsGracefully() {
-            // Given
             Page<Order> emptyPage = new PageImpl<>(List.of());
             when(mockFilters.hasPartnerId()).thenReturn(false);
             when(mockFilters.hasStatus()).thenReturn(false);
             when(mockFilters.hasDateRange()).thenReturn(false);
             when(orderRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
 
-            // When
             Page<OrderResponseDTO> result = orderService.getFilteredOrders(mockFilters, mockPageable);
 
-            // Then
             assertThat(result).isNotNull();
             assertThat(result.getContent()).isEmpty();
             assertThat(result.getTotalElements()).isZero();
@@ -301,7 +277,6 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should approve order successfully when conditions are met")
         void shouldApproveOrderSuccessfully() {
-            // Given
             String orderId = "order-123";
             when(orderRepository.findByIdWithLock(orderId)).thenReturn(Optional.of(mockOrder));
             when(mockOrder.canBeApproved()).thenReturn(true);
@@ -311,10 +286,8 @@ public class OrderServiceTest {
             when(orderRepository.save(any(Order.class))).thenReturn(mockOrder);
             when(orderMapper.toResponseDTO(any(Order.class))).thenReturn(mockOrderResponseDTO);
 
-            // When
             OrderResponseDTO result = orderService.approveOrder(orderId);
 
-            // Then
             assertThat(result).isNotNull();
             verify(partnerService).debitCredit("PARTNER001", BigDecimal.valueOf(100.00));
             verify(mockOrder).updateStatus(OrderStatus.APPROVED);
@@ -325,11 +298,9 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should throw BusinessException when order not found")
         void shouldThrowBusinessExceptionWhenOrderNotFound() {
-            // Given
             String orderId = "non-existent-order";
             when(orderRepository.findByIdWithLock(orderId)).thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> orderService.approveOrder(orderId))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Error creating order: Order not found: " + orderId);
@@ -341,13 +312,11 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should throw BusinessException when order cannot be approved")
         void shouldThrowBusinessExceptionWhenOrderCannotBeApproved() {
-            // Given
             String orderId = "order-123";
             when(orderRepository.findByIdWithLock(orderId)).thenReturn(Optional.of(mockOrder));
             when(mockOrder.canBeApproved()).thenReturn(false);
             when(mockOrder.getStatus()).thenReturn(OrderStatus.CANCELLED);
 
-            // When & Then
             assertThatThrownBy(() -> orderService.approveOrder(orderId))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Order cannot be approved in current status: CANCELLED");
@@ -359,7 +328,6 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should throw BusinessException when partner service fails")
         void shouldThrowBusinessExceptionWhenPartnerServiceFails() {
-            // Given
             String orderId = "order-123";
             when(orderRepository.findByIdWithLock(orderId)).thenReturn(Optional.of(mockOrder));
             when(mockOrder.canBeApproved()).thenReturn(true);
@@ -368,7 +336,6 @@ public class OrderServiceTest {
             doThrow(new RuntimeException("Partner service error"))
                     .when(partnerService).debitCredit(anyString(), any(BigDecimal.class));
 
-            // When & Then
             assertThatThrownBy(() -> orderService.approveOrder(orderId))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Error creating order: Partner service error");
@@ -382,7 +349,6 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should cancel pending order successfully without credit restoration")
         void shouldCancelPendingOrderSuccessfully() {
-            // Given
             String orderId = "order-123";
             when(orderRepository.findByIdWithLock(orderId)).thenReturn(Optional.of(mockOrder));
             when(mockOrder.canBeCancelled()).thenReturn(true);
@@ -390,10 +356,8 @@ public class OrderServiceTest {
             when(orderRepository.save(any(Order.class))).thenReturn(mockOrder);
             when(orderMapper.toResponseDTO(any(Order.class))).thenReturn(mockOrderResponseDTO);
 
-            // When
             OrderResponseDTO result = orderService.cancelOrder(orderId);
 
-            // Then
             assertThat(result).isNotNull();
             verify(mockOrder).updateStatus(OrderStatus.CANCELLED);
             verify(orderRepository).save(mockOrder);
@@ -404,7 +368,6 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should cancel approved order and restore credit")
         void shouldCancelApprovedOrderAndRestoreCredit() {
-            // Given
             String orderId = "order-123";
             when(orderRepository.findByIdWithLock(orderId)).thenReturn(Optional.of(mockOrder));
             when(mockOrder.canBeCancelled()).thenReturn(true);
@@ -414,10 +377,8 @@ public class OrderServiceTest {
             when(orderRepository.save(any(Order.class))).thenReturn(mockOrder);
             when(orderMapper.toResponseDTO(any(Order.class))).thenReturn(mockOrderResponseDTO);
 
-            // When
             OrderResponseDTO result = orderService.cancelOrder(orderId);
 
-            // Then
             assertThat(result).isNotNull();
             verify(partnerService).restoreCredit("PARTNER001", BigDecimal.valueOf(100.00));
             verify(mockOrder).updateStatus(OrderStatus.CANCELLED);
@@ -427,11 +388,9 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should throw BusinessException when order not found")
         void shouldThrowBusinessExceptionWhenOrderNotFound() {
-            // Given
             String orderId = "non-existent-order";
             when(orderRepository.findByIdWithLock(orderId)).thenReturn(Optional.empty());
 
-            // When & Then
             assertThatThrownBy(() -> orderService.cancelOrder(orderId))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Error creating order: Order not found: " + orderId);
@@ -443,13 +402,11 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should throw BusinessException when order cannot be cancelled")
         void shouldThrowBusinessExceptionWhenOrderCannotBeCancelled() {
-            // Given
             String orderId = "order-123";
             when(orderRepository.findByIdWithLock(orderId)).thenReturn(Optional.of(mockOrder));
             when(mockOrder.canBeCancelled()).thenReturn(false);
             when(mockOrder.getStatus()).thenReturn(OrderStatus.DELIVERED);
 
-            // When & Then
             assertThatThrownBy(() -> orderService.cancelOrder(orderId))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Order cannot be cancelled in current status: DELIVERED");
@@ -461,7 +418,6 @@ public class OrderServiceTest {
         @Test
         @DisplayName("Should throw BusinessException when partner service fails during credit restoration")
         void shouldThrowBusinessExceptionWhenPartnerServiceFailsDuringCreditRestoration() {
-            // Given
             String orderId = "order-123";
             when(orderRepository.findByIdWithLock(orderId)).thenReturn(Optional.of(mockOrder));
             when(mockOrder.canBeCancelled()).thenReturn(true);
@@ -471,14 +427,12 @@ public class OrderServiceTest {
             doThrow(new RuntimeException("Partner service error"))
                     .when(partnerService).restoreCredit(anyString(), any(BigDecimal.class));
 
-            // When & Then
             assertThatThrownBy(() -> orderService.cancelOrder(orderId))
                     .isInstanceOf(BusinessException.class)
                     .hasMessageContaining("Error creating order: Partner service error");
         }
     }
 
-    // Helper methods to create mock objects
     private Partner createMockPartner() {
         Partner partner = mock(Partner.class);
         when(partner.getId()).thenReturn("PARTNER001");
@@ -500,7 +454,7 @@ public class OrderServiceTest {
     private CreateOrderDTO createValidOrderDTO() {
         CreateOrderDTO dto = mock(CreateOrderDTO.class);
         when(dto.partnerId()).thenReturn("PARTNER001");
-        // Return empty list to avoid casting issues
+
         when(dto.items()).thenReturn(List.of());
         return dto;
     }
