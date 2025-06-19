@@ -1,5 +1,7 @@
 package com.b2b.ordermanagement.application.services;
 
+import com.b2b.ordermanagement.domain.entities.Partner;
+import com.b2b.ordermanagement.shared.exceptions.BusinessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -9,7 +11,6 @@ import com.b2b.ordermanagement.application.dto.OrderResponseDTO;
 import com.b2b.ordermanagement.application.interfaces.OrderFilterParams;
 import com.b2b.ordermanagement.domain.entities.Order;
 import com.b2b.ordermanagement.domain.entities.OrderItem;
-import com.b2b.ordermanagement.domain.enums.OrderStatus;
 import com.b2b.ordermanagement.infrastructure.repositories.OrderRepository;
 import com.b2b.ordermanagement.shared.exceptions.ResourceNotFoundException;
 import com.b2b.ordermanagement.shared.mappers.OrderMapper;
@@ -18,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -29,28 +29,47 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
+    private final PartnerService partnerService;
 
     public OrderService(OrderRepository orderRepository,
-                            OrderMapper orderMapper) {
+                        PartnerService partnerService,
+                        OrderMapper orderMapper) {
         this.orderRepository = orderRepository;
+        this.partnerService = partnerService;
         this.orderMapper = orderMapper;
     }
 
     public OrderResponseDTO createOrder(CreateOrderDTO createOrderDTO) {
-        logger.info("Creating order for partner: {}", createOrderDTO.partnerId());
+        try {
+            Partner partner = partnerService.getPartnerEntityById(createOrderDTO.partnerId());
 
-        // Create order items
-        List<OrderItem> orderItems = createOrderDTO.items().stream()
-                .map(itemDto -> new OrderItem(itemDto.productId(), itemDto.quantity(), itemDto.unitPrice()))
-                .toList();
+            logger.info("Creating order for partner: {}", createOrderDTO.partnerId());
 
-        // Create order
-        Order order = new Order(createOrderDTO.partnerId(), orderItems);
+            // Create order items
+            List<OrderItem> orderItems = createOrderDTO.items().stream()
+                    .map(itemDto -> new OrderItem(itemDto.productId(), itemDto.quantity(), itemDto.unitPrice()))
+                    .toList();
 
-        Order savedOrder = orderRepository.save(order);
-        logger.info("Order created successfully: {}", savedOrder.getId());
+            // Create order
+            Order order = new Order(createOrderDTO.partnerId(), orderItems);
 
-        return orderMapper.toResponseDTO(savedOrder);
+            // Check credit availability
+            if (!partner.hasAvailableCredit(order.getTotalAmount())) {
+                throw new BusinessException("Insufficient credit available for partner: " + partner.getId());
+            }
+
+            Order savedOrder = orderRepository.save(order);
+            logger.info("Order created successfully: {}", savedOrder.getId());
+
+            return orderMapper.toResponseDTO(savedOrder);
+
+        } catch (BusinessException e) {
+            logger.error("Business error creating order: {}", e.getMessage());
+            throw e; // Re-throw para que o GlobalExceptionHandler capture
+        } catch (Exception e) {
+            logger.error("Unexpected error creating order for partner: {}", createOrderDTO.partnerId(), e);
+            throw new BusinessException("Error creating order: " + e.getMessage());
+        }
     }
 
     @Transactional(readOnly = true)
