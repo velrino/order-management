@@ -4,6 +4,7 @@ import com.b2b.ordermanagement.application.dto.CreateOrderDTO;
 import com.b2b.ordermanagement.application.dto.OrderResponseDTO;
 import com.b2b.ordermanagement.domain.entities.Order;
 import com.b2b.ordermanagement.domain.entities.OrderItem;
+import com.b2b.ordermanagement.domain.enums.OrderStatus;
 import com.b2b.ordermanagement.infrastructure.repositories.OrderRepository;
 import com.b2b.ordermanagement.shared.exceptions.ResourceNotFoundException;
 import com.b2b.ordermanagement.shared.mappers.OrderMapper;
@@ -53,5 +54,45 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
         return orderMapper.toResponseDTO(order);
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponseDTO> getOrdersByPartnerId(String partnerId) {
+        List<Order> orders = orderRepository.findByPartnerIdOrderByCreatedAtDesc(partnerId);
+        return orders.stream()
+                .map(orderMapper::toResponseDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponseDTO> getOrdersByStatus(OrderStatus status) {
+        List<Order> orders = orderRepository.findByStatusOrderByCreatedAtDesc(status);
+        return orders.stream()
+                .map(orderMapper::toResponseDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponseDTO> getOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
+        List<Order> orders = orderRepository.findByCreatedAtBetween(startDate, endDate);
+        return orders.stream()
+                .map(orderMapper::toResponseDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponseDTO> getOrdersByPartnerAndDateRange(String partnerId, LocalDateTime startDate, LocalDateTime endDate) {
+        List<Order> orders = orderRepository.findByPartnerIdAndCreatedAtBetween(partnerId, startDate, endDate);
+        return orders.stream()
+                .map(orderMapper::toResponseDTO)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<OrderResponseDTO> findAll() {
+        List<Order> orders = orderRepository.findAll();
+        return orders.stream()
+                .map(orderMapper::toResponseDTO)
+                .toList();
     }
 }
