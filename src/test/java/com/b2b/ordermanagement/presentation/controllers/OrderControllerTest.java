@@ -178,4 +178,35 @@ class OrderControllerTest {
                     .andExpect(jsonPath("$.message").value("Order not found: " + orderId));
         }
     }
+
+    @Nested
+    @DisplayName("GET /api/v1/orders - Get Orders with Pagination and Filters")
+    class GetOrdersWithFiltersTests {
+
+        @Test
+        @DisplayName("Should return paginated orders with default parameters")
+        void getOrders_WithDefaultParams_ShouldReturnPaginatedOrders() throws Exception {
+            // Arrange
+            OrderResponseDTO order1 = new OrderResponseDTO("ORDER001", "PARTNER001", OrderStatus.PENDING,
+                    BigDecimal.valueOf(200), LocalDateTime.now(), LocalDateTime.now(), List.of());
+            OrderResponseDTO order2 = new OrderResponseDTO("ORDER002", "PARTNER002", OrderStatus.APPROVED,
+                    BigDecimal.valueOf(300), LocalDateTime.now(), LocalDateTime.now(), List.of());
+
+            Page<OrderResponseDTO> page = new PageImpl<>(List.of(order1, order2));
+            PagedResponse<OrderResponseDTO> pagedResponse = PagedResponse.of(page);
+
+            when(orderService.getFilteredOrders(any(OrderFilterParams.class), any(Pageable.class)))
+                    .thenReturn(page);
+
+            // Act & Assert
+            mockMvc.perform(get("/api/v1/orders"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.records").isArray())
+                    .andExpect(jsonPath("$.records", hasSize(2)))
+                    .andExpect(jsonPath("$.records[0].id").value("ORDER001"))
+                    .andExpect(jsonPath("$.records[1].id").value("ORDER002"))
+                    .andExpect(jsonPath("$.page").value(0))
+                    .andExpect(jsonPath("$.pages").value(1));
+        }
+    }
 }
