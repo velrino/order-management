@@ -31,13 +31,16 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final OrderMapper orderMapper;
     private final PartnerService partnerService;
+    private final NotificationService notificationService;
 
     public OrderService(OrderRepository orderRepository,
                         PartnerService partnerService,
+                        NotificationService notificationService,
                         OrderMapper orderMapper) {
         this.orderRepository = orderRepository;
         this.partnerService = partnerService;
         this.orderMapper = orderMapper;
+        this.notificationService = notificationService;
     }
 
     public OrderResponseDTO createOrder(CreateOrderDTO createOrderDTO) {
@@ -61,6 +64,24 @@ public class OrderService {
 
             Order savedOrder = orderRepository.save(order);
             logger.info("Order created successfully: {}", savedOrder.getId());
+
+            // Send notification
+            notificationService.simulateMessageSend("order.created", String.format("""
+            {
+                "event": "order_created",
+                "orderId": "%s",
+                "partnerId": "%s",
+                "totalAmount": %s,
+                "itemCount": %d,
+                "timestamp": "%s"
+            }
+            """,
+                    order.getId(),
+                    order.getPartnerId(),
+                    order.getTotalAmount(),
+                    order.getItems().size(),
+                    order.getCreatedAt()
+            ));
 
             return orderMapper.toResponseDTO(savedOrder);
 
@@ -152,6 +173,8 @@ public class OrderService {
             Order savedOrder = orderRepository.save(order);
             logger.info("Order approved successfully: {}", orderId);
 
+            notificationService.simulateMessageSend("order.status.changed", statusChangeMessage(savedOrder, previousStatus));
+
             return orderMapper.toResponseDTO(savedOrder);
         } catch (Exception e) {
             logger.error("Unexpected error approve order: {}", orderId, e);
@@ -183,10 +206,31 @@ public class OrderService {
             Order savedOrder = orderRepository.save(order);
             logger.info("Order cancelled successfully: {}", orderId);
 
+            notificationService.simulateMessageSend("order.status.changed", statusChangeMessage(savedOrder, previousStatus));
+
             return orderMapper.toResponseDTO(savedOrder);
         } catch (Exception e) {
             logger.error("Unexpected error approve order: {}", orderId, e);
             throw new BusinessException("Error creating order: " + e.getMessage());
         }
+    }
+
+    private String statusChangeMessage(Order order, OrderStatus previousStatus) {
+        return String.format("""
+            {
+                "event": "order_status_changed",
+                "orderId": "%s",
+                "partnerId": "%s",
+                "previousStatus": "%s",
+                "newStatus": "%s",
+                "timestamp": "%s"
+            }
+            """,
+                order.getId(),
+                order.getPartnerId(),
+                previousStatus,
+                order.getStatus(),
+                order.getUpdatedAt()
+        );
     }
 }
