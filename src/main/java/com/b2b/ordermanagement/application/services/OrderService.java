@@ -64,9 +64,6 @@ public class OrderService {
 
             return orderMapper.toResponseDTO(savedOrder);
 
-        } catch (BusinessException e) {
-            logger.error("Business error creating order: {}", e.getMessage());
-            throw e; // Re-throw para que o GlobalExceptionHandler capture
         } catch (Exception e) {
             logger.error("Unexpected error creating order for partner: {}", createOrderDTO.partnerId(), e);
             throw new BusinessException("Error creating order: " + e.getMessage());
@@ -94,41 +91,41 @@ public class OrderService {
         Page<Order> orders;
 
         if (filters.hasPartnerId() && filters.hasStatus() && filters.hasDateRange()) {
-            // Partner + Status + DateRange
+            // Partner, Status and DateRange
             orders = orderRepository.findByPartnerIdAndStatusAndCreatedAtBetween(
                     filters.getPartnerId(), filters.getStatus(),
                     filters.getStartDate(), filters.getEndDate(), pageable);
 
         } else if (filters.hasPartnerId() && filters.hasDateRange()) {
-            // Partner + DateRange
+            // Partner and DateRange
             orders = orderRepository.findByPartnerIdAndCreatedAtBetween(
                     filters.getPartnerId(), filters.getStartDate(), filters.getEndDate(), pageable);
 
         } else if (filters.hasPartnerId() && filters.hasStatus()) {
-            // Partner + Status
+            // Partner and Status
             orders = orderRepository.findByPartnerIdAndStatus(
                     filters.getPartnerId(), filters.getStatus(), pageable);
 
         } else if (filters.hasStatus() && filters.hasDateRange()) {
-            // Status + DateRange
+            // Only and DateRange
             orders = orderRepository.findByStatusAndCreatedAtBetween(
                     filters.getStatus(), filters.getStartDate(), filters.getEndDate(), pageable);
 
         } else if (filters.hasPartnerId()) {
-            // Apenas Partner
+            // Only Partner
             orders = orderRepository.findByPartnerIdOrderByCreatedAtDesc(filters.getPartnerId(), pageable);
 
         } else if (filters.hasStatus()) {
-            // Apenas Status
+            // Only Status
             orders = orderRepository.findByStatusOrderByCreatedAtDesc(filters.getStatus(), pageable);
 
         } else if (filters.hasDateRange()) {
-            // Apenas DateRange
+            // Only DateRange
             orders = orderRepository.findByCreatedAtBetween(
                     filters.getStartDate(), filters.getEndDate(), pageable);
 
         } else {
-            // Sem filtros - todos os pedidos
+            // All orders without filter
             orders = orderRepository.findAll(pageable);
         }
 
@@ -136,24 +133,60 @@ public class OrderService {
     }
 
     public OrderResponseDTO approveOrder(String orderId) {
-        logger.info("Approving order: {}", orderId);
+        try {
+            logger.info("Approving order: {}", orderId);
 
-        Order order = orderRepository.findByIdWithLock(orderId)
-                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+            Order order = orderRepository.findByIdWithLock(orderId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
-        if (!order.canBeApproved()) {
-            throw new BusinessException("Order cannot be approved in current status: " + order.getStatus());
+            if (!order.canBeApproved()) {
+                throw new BusinessException("Order cannot be approved in current status: " + order.getStatus());
+            }
+
+            // Debit partner credit
+            partnerService.debitCredit(order.getPartnerId(), order.getTotalAmount());
+
+            OrderStatus previousStatus = order.getStatus();
+            order.updateStatus(OrderStatus.APPROVED);
+
+            Order savedOrder = orderRepository.save(order);
+            logger.info("Order approved successfully: {}", orderId);
+
+            return orderMapper.toResponseDTO(savedOrder);
+        } catch (Exception e) {
+            logger.error("Unexpected error approve order: {}", orderId, e);
+            throw new BusinessException("Error creating order: " + e.getMessage());
         }
+    }
 
-        // Debit partner credit
-        partnerService.debitCredit(order.getPartnerId(), order.getTotalAmount());
+    public OrderResponseDTO cancelOrder(String orderId) {
+        try {
+            logger.info("Cancelling order: {}", orderId);
 
-        OrderStatus previousStatus = order.getStatus();
-        order.updateStatus(OrderStatus.APPROVED);
+            Order order = orderRepository.findByIdWithLock(orderId)
+                    .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
 
-        Order savedOrder = orderRepository.save(order);
-        logger.info("Order approved successfully: {}", orderId);
+            if (!order.canBeCancelled()) {
+                throw new BusinessException("Order cannot be cancelled in current status: " + order.getStatus());
+            }
 
-        return orderMapper.toResponseDTO(savedOrder);
+            // If order was approved, restore partner credit
+            if (order.getStatus() == OrderStatus.APPROVED ||
+                    order.getStatus() == OrderStatus.PROCESSING ||
+                    order.getStatus() == OrderStatus.SHIPPED) {
+                partnerService.restoreCredit(order.getPartnerId(), order.getTotalAmount());
+            }
+
+            OrderStatus previousStatus = order.getStatus();
+            order.updateStatus(OrderStatus.CANCELLED);
+
+            Order savedOrder = orderRepository.save(order);
+            logger.info("Order cancelled successfully: {}", orderId);
+
+            return orderMapper.toResponseDTO(savedOrder);
+        } catch (Exception e) {
+            logger.error("Unexpected error approve order: {}", orderId, e);
+            throw new BusinessException("Error creating order: " + e.getMessage());
+        }
     }
 }

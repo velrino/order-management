@@ -80,4 +80,12 @@ public class OrderController {
         OrderResponseDTO order = orderService.approveOrder(orderId);
         return ResponseEntity.ok(order);
     }
+
+    @PutMapping("/{orderId}/cancel")
+    @Operation(summary = "Cancel order", description = "Cancels an order and restores partner credit if applicable")
+    public ResponseEntity<OrderResponseDTO> cancelOrder(
+            @Parameter(description = "Order ID") @PathVariable String orderId) {
+        OrderResponseDTO order = orderService.cancelOrder(orderId);
+        return ResponseEntity.ok(order);
+    }
 }
