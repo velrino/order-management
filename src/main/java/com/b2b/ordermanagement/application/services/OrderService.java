@@ -33,7 +33,6 @@ public class OrderService {
     public OrderResponseDTO createOrder(CreateOrderDTO createOrderDTO) {
         logger.info("Creating order for partner: {}", createOrderDTO.partnerId());
 
-
         // Create order items
         List<OrderItem> orderItems = createOrderDTO.items().stream()
                 .map(itemDto -> new OrderItem(itemDto.productId(), itemDto.quantity(), itemDto.unitPrice()))
@@ -44,8 +43,6 @@ public class OrderService {
 
         Order savedOrder = orderRepository.save(order);
         logger.info("Order created successfully: {}", savedOrder.getId());
-
-
 
         return orderMapper.toResponseDTO(savedOrder);
     }
