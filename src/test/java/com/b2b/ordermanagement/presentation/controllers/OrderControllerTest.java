@@ -212,7 +212,6 @@ class OrderControllerTest {
         @Test
         @DisplayName("Should filter orders by partner ID")
         void getOrders_WithPartnerId_ShouldReturnFilteredOrders() throws Exception {
-            // Arrange
             OrderResponseDTO order = new OrderResponseDTO("ORDER001", "PARTNER001", OrderStatus.PENDING,
                     BigDecimal.valueOf(200), LocalDateTime.now(), LocalDateTime.now(), List.of());
 
@@ -221,16 +220,34 @@ class OrderControllerTest {
             when(orderService.getFilteredOrders(any(OrderFilterParams.class), any(Pageable.class)))
                     .thenReturn(page);
 
-            // Act & Assert
             mockMvc.perform(get("/api/v1/orders")
                             .param("partnerId", "PARTNER001"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.records").isArray())
                     .andExpect(jsonPath("$.records[0].partnerId").value("PARTNER001"));
 
-            // Verify filter was applied
             verify(orderService).getFilteredOrders(argThat(filter ->
                     "PARTNER001".equals(((OrderFilterDTO) filter).getPartnerId())), any(Pageable.class));
+        }
+
+        @Test
+        @DisplayName("Should filter orders by status")
+        void getOrders_WithStatus_ShouldReturnFilteredOrders() throws Exception {
+            OrderResponseDTO order = new OrderResponseDTO("ORDER001", "PARTNER001", OrderStatus.APPROVED,
+                    BigDecimal.valueOf(200), LocalDateTime.now(), LocalDateTime.now(), List.of());
+
+            Page<OrderResponseDTO> page = new PageImpl<>(List.of(order));
+
+            when(orderService.getFilteredOrders(any(OrderFilterParams.class), any(Pageable.class)))
+                    .thenReturn(page);
+
+            mockMvc.perform(get("/api/v1/orders")
+                            .param("status", "APPROVED"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.records[0].status").value("APPROVED"));
+
+            verify(orderService).getFilteredOrders(argThat(filter ->
+                    OrderStatus.APPROVED.equals(((OrderFilterDTO) filter).getStatus())), any(Pageable.class));
         }
     }
 }
