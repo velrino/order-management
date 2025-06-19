@@ -1,6 +1,7 @@
 package com.b2b.ordermanagement.application.services;
 
 import com.b2b.ordermanagement.domain.entities.Partner;
+import com.b2b.ordermanagement.domain.enums.OrderStatus;
 import com.b2b.ordermanagement.shared.exceptions.BusinessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -81,14 +82,6 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponseDTO> findAll() {
-        List<Order> orders = orderRepository.findAll();
-        return orders.stream()
-                .map(orderMapper::toResponseDTO)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
     public Page<OrderResponseDTO> getFilteredOrders(OrderFilterParams filters, Pageable pageable) {
         if (pageable.getSort().isUnsorted()) {
             pageable = PageRequest.of(
@@ -140,5 +133,27 @@ public class OrderService {
         }
 
         return orders.map(orderMapper::toResponseDTO);
+    }
+
+    public OrderResponseDTO approveOrder(String orderId) {
+        logger.info("Approving order: {}", orderId);
+
+        Order order = orderRepository.findByIdWithLock(orderId)
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found: " + orderId));
+
+        if (!order.canBeApproved()) {
+            throw new BusinessException("Order cannot be approved in current status: " + order.getStatus());
+        }
+
+        // Debit partner credit
+        partnerService.debitCredit(order.getPartnerId(), order.getTotalAmount());
+
+        OrderStatus previousStatus = order.getStatus();
+        order.updateStatus(OrderStatus.APPROVED);
+
+        Order savedOrder = orderRepository.save(order);
+        logger.info("Order approved successfully: {}", orderId);
+
+        return orderMapper.toResponseDTO(savedOrder);
     }
 }

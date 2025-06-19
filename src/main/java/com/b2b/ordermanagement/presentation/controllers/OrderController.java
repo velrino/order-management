@@ -72,4 +72,12 @@ public class OrderController {
 
         return ResponseEntity.ok(PagedResponse.of(orders));
     }
+
+    @PutMapping("/{orderId}/approve")
+    @Operation(summary = "Approve order", description = "Approves a pending order and debits partner credit")
+    public ResponseEntity<OrderResponseDTO> approveOrder(
+            @Parameter(description = "Order ID") @PathVariable String orderId) {
+        OrderResponseDTO order = orderService.approveOrder(orderId);
+        return ResponseEntity.ok(order);
+    }
 }
