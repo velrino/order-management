@@ -273,4 +273,31 @@ class OrderControllerTest {
             }), any(Pageable.class));
         }
     }
+
+    @Nested
+    @DisplayName("PUT /api/v1/orders/{orderId}/approve - Approve Order")
+    class ApproveOrderTests {
+
+        @Test
+        @DisplayName("Should approve order successfully")
+        void approveOrder_WithValidId_ShouldReturnApprovedOrder() throws Exception {
+            String orderId = "ORDER001";
+            OrderResponseDTO responseDTO = new OrderResponseDTO(
+                    orderId,
+                    "PARTNER001",
+                    OrderStatus.APPROVED,
+                    BigDecimal.valueOf(200),
+                    LocalDateTime.now(),
+                    LocalDateTime.now(),
+                    List.of()
+            );
+
+            when(orderService.approveOrder(orderId)).thenReturn(responseDTO);
+
+            mockMvc.perform(put("/api/v1/orders/{orderId}/approve", orderId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(orderId))
+                    .andExpect(jsonPath("$.status").value("APPROVED"));
+        }
+    }
 }
