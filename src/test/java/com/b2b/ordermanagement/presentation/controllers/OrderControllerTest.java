@@ -314,4 +314,33 @@ class OrderControllerTest {
                     .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
         }
     }
+
+    @Nested
+    @DisplayName("PUT /api/v1/orders/{orderId}/cancel - Cancel Order")
+    class CancelOrderTests {
+
+        @Test
+        @DisplayName("Should cancel order successfully")
+        void cancelOrder_WithValidId_ShouldReturnCancelledOrder() throws Exception {
+            // Arrange
+            String orderId = "ORDER001";
+            OrderResponseDTO responseDTO = new OrderResponseDTO(
+                    orderId,
+                    "PARTNER001",
+                    OrderStatus.CANCELLED,
+                    BigDecimal.valueOf(200),
+                    LocalDateTime.now(),
+                    LocalDateTime.now(),
+                    List.of()
+            );
+
+            when(orderService.cancelOrder(orderId)).thenReturn(responseDTO);
+
+            // Act & Assert
+            mockMvc.perform(put("/api/v1/orders/{orderId}/cancel", orderId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(orderId))
+                    .andExpect(jsonPath("$.status").value("CANCELLED"));
+        }
+    }
 }
