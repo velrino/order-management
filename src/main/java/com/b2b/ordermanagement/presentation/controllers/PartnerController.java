@@ -1,6 +1,5 @@
 package com.b2b.ordermanagement.presentation.controllers;
 
-import com.b2b.ordermanagement.application.dto.OrderFilterDTO;
 import com.b2b.ordermanagement.application.dto.PagedResponse;
 import com.b2b.ordermanagement.application.dto.PartnerFilterDTO;
 import com.b2b.ordermanagement.application.dto.PartnerResponseDTO;
@@ -10,12 +9,10 @@ import org.springframework.data.domain.Page;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
