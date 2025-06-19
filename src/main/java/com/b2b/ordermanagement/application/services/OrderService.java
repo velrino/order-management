@@ -1,7 +1,12 @@
 package com.b2b.ordermanagement.application.services;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import com.b2b.ordermanagement.application.dto.CreateOrderDTO;
 import com.b2b.ordermanagement.application.dto.OrderResponseDTO;
+import com.b2b.ordermanagement.application.interfaces.OrderFilterParams;
 import com.b2b.ordermanagement.domain.entities.Order;
 import com.b2b.ordermanagement.domain.entities.OrderItem;
 import com.b2b.ordermanagement.domain.enums.OrderStatus;
@@ -57,42 +62,64 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public List<OrderResponseDTO> getOrdersByPartnerId(String partnerId) {
-        List<Order> orders = orderRepository.findByPartnerIdOrderByCreatedAtDesc(partnerId);
-        return orders.stream()
-                .map(orderMapper::toResponseDTO)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<OrderResponseDTO> getOrdersByStatus(OrderStatus status) {
-        List<Order> orders = orderRepository.findByStatusOrderByCreatedAtDesc(status);
-        return orders.stream()
-                .map(orderMapper::toResponseDTO)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<OrderResponseDTO> getOrdersByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
-        List<Order> orders = orderRepository.findByCreatedAtBetween(startDate, endDate);
-        return orders.stream()
-                .map(orderMapper::toResponseDTO)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
-    public List<OrderResponseDTO> getOrdersByPartnerAndDateRange(String partnerId, LocalDateTime startDate, LocalDateTime endDate) {
-        List<Order> orders = orderRepository.findByPartnerIdAndCreatedAtBetween(partnerId, startDate, endDate);
-        return orders.stream()
-                .map(orderMapper::toResponseDTO)
-                .toList();
-    }
-
-    @Transactional(readOnly = true)
     public List<OrderResponseDTO> findAll() {
         List<Order> orders = orderRepository.findAll();
         return orders.stream()
                 .map(orderMapper::toResponseDTO)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Page<OrderResponseDTO> getFilteredOrders(OrderFilterParams filters, Pageable pageable) {
+        if (pageable.getSort().isUnsorted()) {
+            pageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    Sort.by(Sort.Direction.DESC, "created_at")
+            );
+        }
+
+        Page<Order> orders;
+
+        if (filters.hasPartnerId() && filters.hasStatus() && filters.hasDateRange()) {
+            // Partner + Status + DateRange
+            orders = orderRepository.findByPartnerIdAndStatusAndCreatedAtBetween(
+                    filters.getPartnerId(), filters.getStatus(),
+                    filters.getStartDate(), filters.getEndDate(), pageable);
+
+        } else if (filters.hasPartnerId() && filters.hasDateRange()) {
+            // Partner + DateRange
+            orders = orderRepository.findByPartnerIdAndCreatedAtBetween(
+                    filters.getPartnerId(), filters.getStartDate(), filters.getEndDate(), pageable);
+
+        } else if (filters.hasPartnerId() && filters.hasStatus()) {
+            // Partner + Status
+            orders = orderRepository.findByPartnerIdAndStatus(
+                    filters.getPartnerId(), filters.getStatus(), pageable);
+
+        } else if (filters.hasStatus() && filters.hasDateRange()) {
+            // Status + DateRange
+            orders = orderRepository.findByStatusAndCreatedAtBetween(
+                    filters.getStatus(), filters.getStartDate(), filters.getEndDate(), pageable);
+
+        } else if (filters.hasPartnerId()) {
+            // Apenas Partner
+            orders = orderRepository.findByPartnerIdOrderByCreatedAtDesc(filters.getPartnerId(), pageable);
+
+        } else if (filters.hasStatus()) {
+            // Apenas Status
+            orders = orderRepository.findByStatusOrderByCreatedAtDesc(filters.getStatus(), pageable);
+
+        } else if (filters.hasDateRange()) {
+            // Apenas DateRange
+            orders = orderRepository.findByCreatedAtBetween(
+                    filters.getStartDate(), filters.getEndDate(), pageable);
+
+        } else {
+            // Sem filtros - todos os pedidos
+            orders = orderRepository.findAll(pageable);
+        }
+
+        return orders.map(orderMapper::toResponseDTO);
     }
 }

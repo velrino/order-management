@@ -1,5 +1,9 @@
 package com.b2b.ordermanagement.presentation.controllers;
 
+import com.b2b.ordermanagement.application.dto.OrderFilterDTO;
+import com.b2b.ordermanagement.application.dto.PagedResponse;
+import com.b2b.ordermanagement.application.interfaces.OrderFilterParams;
+import org.springframework.data.domain.Page;
 import com.b2b.ordermanagement.application.dto.CreateOrderDTO;
 import com.b2b.ordermanagement.application.dto.OrderResponseDTO;
 import com.b2b.ordermanagement.application.services.OrderService;
@@ -8,13 +12,15 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/orders")
@@ -42,30 +48,28 @@ public class OrderController {
         return ResponseEntity.ok(order);
     }
 
+
     @GetMapping
     @Operation(summary = "Get orders with filters", description = "Retrieves orders filtered by various criteria")
-    public ResponseEntity<List<OrderResponseDTO>> getOrders(
+    public ResponseEntity<PagedResponse<OrderResponseDTO>> getOrders(
             @Parameter(description = "Partner ID") @RequestParam(required = false) String partnerId,
             @Parameter(description = "Order status") @RequestParam(required = false) OrderStatus status,
             @Parameter(description = "Start date (ISO format)")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @Parameter(description = "End date (ISO format)")
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @Parameter(description = "Page number (0-based)", example = "0") @RequestParam(defaultValue = "0") int page,
+            @Parameter(description = "Page size", example = "20") @RequestParam(defaultValue = "20") int size,
+            @Parameter(description = "Sort by field", example = "createdAt") @RequestParam(defaultValue = "createdAt") String sort,
+            @Parameter(description = "Sort direction", example = "desc") @RequestParam(defaultValue = "desc") String direction) {
 
-        List<OrderResponseDTO> orders;
+        Sort.Direction sortDirection = direction.equalsIgnoreCase("desc") ?
+                Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
 
-        if (partnerId != null && startDate != null && endDate != null) {
-            orders = orderService.getOrdersByPartnerAndDateRange(partnerId, startDate, endDate);
-        } else if (partnerId != null) {
-            orders = orderService.getOrdersByPartnerId(partnerId);
-        } else if (status != null) {
-            orders = orderService.getOrdersByStatus(status);
-        } else if (startDate != null && endDate != null) {
-            orders = orderService.getOrdersByDateRange(startDate, endDate);
-        } else {
-            orders = orderService.findAll();
-        }
+        OrderFilterParams filters = new OrderFilterDTO(partnerId, status, startDate, endDate);
+        Page<OrderResponseDTO> orders = orderService.getFilteredOrders(filters, pageable);
 
-        return ResponseEntity.ok(orders);
+        return ResponseEntity.ok(PagedResponse.of(orders));
     }
 }
