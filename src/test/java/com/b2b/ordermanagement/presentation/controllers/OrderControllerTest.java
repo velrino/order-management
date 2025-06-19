@@ -249,5 +249,28 @@ class OrderControllerTest {
             verify(orderService).getFilteredOrders(argThat(filter ->
                     OrderStatus.APPROVED.equals(((OrderFilterDTO) filter).getStatus())), any(Pageable.class));
         }
+
+        @Test
+        @DisplayName("Should filter orders by date range")
+        void getOrders_WithDateRange_ShouldReturnFilteredOrders() throws Exception {
+            OrderResponseDTO order = new OrderResponseDTO("ORDER001", "PARTNER001", OrderStatus.PENDING,
+                    BigDecimal.valueOf(200), LocalDateTime.now(), LocalDateTime.now(), List.of());
+
+            Page<OrderResponseDTO> page = new PageImpl<>(List.of(order));
+
+            when(orderService.getFilteredOrders(any(OrderFilterParams.class), any(Pageable.class)))
+                    .thenReturn(page);
+
+            mockMvc.perform(get("/api/v1/orders")
+                            .param("startDate", "2025-01-01T00:00:00")
+                            .param("endDate", "2025-12-31T23:59:59"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.records").isArray());
+
+            verify(orderService).getFilteredOrders(argThat(filter -> {
+                OrderFilterDTO dto = (OrderFilterDTO) filter;
+                return dto.getStartDate() != null && dto.getEndDate() != null;
+            }), any(Pageable.class));
+        }
     }
 }
