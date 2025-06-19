@@ -47,7 +47,7 @@ public class PartnerController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sort));
 
         PartnerFilterParams filters = new PartnerFilterDTO(partnerId, startDate, endDate);
-        Page<PartnerResponseDTO> orders = partnerService.getFilteredOrders(filters, pageable);
+        Page<PartnerResponseDTO> orders = partnerService.getFiltered(filters, pageable);
 
         return ResponseEntity.ok(PagedResponse.of(orders));
     }

@@ -96,7 +96,7 @@ public class PartnerService {
     }
 
     @Transactional(readOnly = true)
-    public Page<PartnerResponseDTO> getFilteredOrders(PartnerFilterParams filters, Pageable pageable) {
+    public Page<PartnerResponseDTO> getFiltered(PartnerFilterParams filters, Pageable pageable) {
         if (pageable.getSort().isUnsorted()) {
             pageable = PageRequest.of(
                     pageable.getPageNumber(),

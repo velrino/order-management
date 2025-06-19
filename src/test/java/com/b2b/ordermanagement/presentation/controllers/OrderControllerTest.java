@@ -308,7 +308,6 @@ class OrderControllerTest {
             when(orderService.approveOrder(orderId))
                     .thenThrow(new ResourceNotFoundException("Order not found: " + orderId));
 
-
             mockMvc.perform(put("/api/v1/orders/{orderId}/approve", orderId))
                     .andExpect(status().isNotFound())
                     .andExpect(jsonPath("$.code").value("RESOURCE_NOT_FOUND"));
@@ -322,7 +321,6 @@ class OrderControllerTest {
         @Test
         @DisplayName("Should cancel order successfully")
         void cancelOrder_WithValidId_ShouldReturnCancelledOrder() throws Exception {
-            // Arrange
             String orderId = "ORDER001";
             OrderResponseDTO responseDTO = new OrderResponseDTO(
                     orderId,
@@ -336,7 +334,6 @@ class OrderControllerTest {
 
             when(orderService.cancelOrder(orderId)).thenReturn(responseDTO);
 
-            // Act & Assert
             mockMvc.perform(put("/api/v1/orders/{orderId}/cancel", orderId))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.id").value(orderId))
