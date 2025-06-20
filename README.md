@@ -211,36 +211,6 @@ O **Order Management Service** é uma aplicação **Spring Boot** que segue uma 
 - **JPA/Hibernate**: ORM para PostgreSQL
 - **Migrations**: Controle de versão do banco
 
-### **🔧 Camada de Infraestrutura**
-
-- **Database**: PostgreSQL
-- **Connection Pool**: HikariCP
-- **Monitoring**: Spring Actuator
-- **Logging**: SLF4J + Logback
-
-## 🗄️ Arquitetura de Dados
-
-### **Banco de Dados: PostgreSQL**
-
-```sql
--- Estrutura sugerida baseada no domínio
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   customers  │    │    orders    │    │ order_items  │
-├──────────────┤    ├──────────────┤    ├──────────────┤
-│ id (PK)      │    │ id (PK)      │    │ id (PK)      │
-│ name         │◄───┤ customer_id  │    │ order_id (FK)│
-│ email        │    │ order_date   │◄───┤ product_id   │
-│ created_at   │    │ status       │    │ quantity     │
-└──────────────┘    │ total_amount │    │ unit_price   │
-                    └──────────────┘    └──────────────┘
-```
-
-### **Pool de Conexões (HikariCP)**
-
-- **Máximo**: 20 conexões
-- **Mínimo Idle**: 5 conexões
-- **Otimizado** para alta performance
-
 ## 🚀 Arquitetura de Deploy
 
 ### **Containerização (Docker)**
@@ -265,24 +235,6 @@ O **Order Management Service** é uma aplicação **Spring Boot** que segue uma 
 - **Bridge Network**: Comunicação entre containers
 - **Service Discovery**: DNS interno do Docker
 - **Health Checks**: Monitoramento automático
-
-## 📊 Arquitetura de Monitoramento
-
-### **Spring Boot Actuator**
-
-```
-Endpoints Expostos:
-├── /actuator/health     ← Status da aplicação
-├── /actuator/info       ← Informações da aplicação
-└── /actuator/metrics    ← Métricas de performance
-```
-
-### **Health Checks**
-
-- **Application**: Verifica se a API responde
-- **Database**: Verifica conectividade PostgreSQL
-- **Disk Space**: Monitora espaço em disco
-- **Custom**: Checks específicos do domínio
 
 ## 🔐 Arquitetura de Segurança
 
@@ -336,15 +288,6 @@ Endpoints Expostos:
 - **Clean Architecture**: Separação de responsabilidades
 - **SOLID Principles**: Design orientado a objetos
 - **DRY**: Reutilização de código
-
-### **Testes (Recomendado)**
-
-```
-├── Unit Tests        ← Services, Repositories
-├── Integration Tests ← API Endpoints
-├── Contract Tests    ← External APIs
-└── E2E Tests        ← User Scenarios
-```
 
 ## 🔮 Evolução Arquitetural
 
