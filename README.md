@@ -59,7 +59,7 @@ Após a execução, os seguintes serviços estarão disponíveis:
 
 - Host: `localhost`
 - Porta: `5432`
-- Database: `order_management`
+- Database: `postgres`
 - Usuário: `admin`
 - Senha: `admin123`
 
@@ -122,7 +122,7 @@ docker-compose exec order-management-service sh
 ### Acessar PostgreSQL via CLI
 
 ```bash
-docker-compose exec postgres psql -U admin -d order_management
+docker-compose exec postgres psql -U admin -d postgres
 ```
 
 ## 🔧 Configurações da Aplicação
@@ -131,12 +131,12 @@ docker-compose exec postgres psql -U admin -d order_management
 
 O Docker Compose já configura automaticamente as seguintes variáveis:
 
-| Variável                        | Valor                                              | Descrição                   |
-| ------------------------------- | -------------------------------------------------- | --------------------------- |
-| `SPRING_DATASOURCE_URL`         | `jdbc:postgresql://postgres:5432/order_management` | URL do banco                |
-| `SPRING_DATASOURCE_USERNAME`    | `admin`                                            | Usuário do banco            |
-| `SPRING_DATASOURCE_PASSWORD`    | `admin123`                                         | Senha do banco              |
-| `SPRING_JPA_HIBERNATE_DDL_AUTO` | `update`                                           | Modo de criação das tabelas |
+| Variável                        | Valor                                      | Descrição                   |
+| ------------------------------- | ------------------------------------------ | --------------------------- |
+| `SPRING_DATASOURCE_URL`         | `jdbc:postgresql://postgres:5432/postgres` | URL do banco                |
+| `SPRING_DATASOURCE_USERNAME`    | `admin`                                    | Usuário do banco            |
+| `SPRING_DATASOURCE_PASSWORD`    | `admin123`                                 | Senha do banco              |
+| `SPRING_JPA_HIBERNATE_DDL_AUTO` | `update`                                   | Modo de criação das tabelas |
 
 ### Pool de Conexões
 
