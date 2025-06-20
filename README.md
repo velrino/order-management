@@ -305,15 +305,6 @@ O **Order Management Service** é uma aplicação **Spring Boot** que segue uma 
 - **Database per Service**: Preparado
 - **Event-driven**: Comunicação assíncrona
 
-## 🎯 Benefícios da Arquitetura Atual
-
-✅ **Simplicidade**: Fácil desenvolvimento e deploy
-✅ **Performance**: Comunicação in-process
-✅ **Consistência**: Transações ACID
-✅ **Debugging**: Contexto unificado
-✅ **Deployment**: Single artifact
-✅ **Monitoring**: Centralizado
-
 ## ⚡ Próximos Passos Recomendados
 
 1. **Implementar testes automatizados**
