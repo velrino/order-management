@@ -12,6 +12,21 @@ Sistema de gerenciamento de pedidos desenvolvido em Spring Boot com PostgreSQL.
 
 > **Nota**: Não é necessário ter Java ou Maven instalados localmente, pois tudo será executado via Docker.
 
+## ⚡ Quick Start (TL;DR)
+
+```bash
+# Clone o repositório
+git clone git@github.com:velrino/order-management.git
+cd order-management
+
+# Execute tudo
+docker-compose up --build
+
+# Acesse: http://localhost:8080/swagger-ui.html
+```
+
+**Pronto! Sua aplicação estará rodando em http://localhost:8080** 🎉
+
 ## 🚀 Execução Rápida
 
 Para executar o projeto completo com **um único comando**:
@@ -149,21 +164,6 @@ curl http://localhost:8080/actuator/metrics
 - **Actuator**: Endpoints de monitoramento e métricas
 - **PgAdmin**: Interface web para gerenciar o PostgreSQL
 - **Health Checks**: Verificação automática da saúde dos serviços
-
-## ⚡ Quick Start (TL;DR)
-
-```bash
-# Clone o repositório
-git clone git@github.com:velrino/order-management.git
-cd order-management
-
-# Execute tudo
-docker-compose up --build
-
-# Acesse: http://localhost:8080/swagger-ui.html
-```
-
-**Pronto! Sua aplicação estará rodando em http://localhost:8080** 🎉
 
 # 🏗️ Arquitetura do Order Management Service
 
